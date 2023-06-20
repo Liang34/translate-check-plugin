@@ -1,18 +1,23 @@
 const CHECK_I18_NAME = "namespaceIntl";
-const trans = require('../local/zh-cn.json')
-class MyPlugin {
+const DEFAULT_TRANSLATE_FILE = '../local/zh-cn.json';
+const path = require('path');
+const ejs = require('ejs')
+const fs = require('fs')
+class TranslateCheckPlugin {
+    constructor(options) {
+        // 需要传翻译的文件地址
+        this.options = options;
+    }
     apply(compiler) {
-        compiler.hooks.emit.tapAsync('myplugin', (compilation, cb) => {
-            //可遍历出所有的资源名
-            // for (var filename in compilation.assets) {
-            //     console.log('name==', filename) 
-            // }
-            // console.log(compilation.assets)
+        compiler.hooks.emit.tapAsync('translate-check-plugin', (compilation, cb) => {
+            const translateFile = this.options.translate || DEFAULT_TRANSLATE_FILE
+            const trans = require(translateFile)
             compilation.chunks.forEach(function (chunk) {
-                chunk.files.forEach(function (filename) {
+                chunk.files.forEach(async (filename) => {
                     // compilation.assets 存放当前所有即将输出的资源
                     // 调用一个输出资源的 source() 方法能获取到输出资源的内容
                     let source = compilation.assets[filename].source();
+                    // 暂时先写死namespaceIntl，好像没有其他方法
                     const reg = new RegExp(/namespaceIntl\((.+?)\)/g);
                     // 匹配到的内容
                     const matchArr = source.match(reg);
@@ -23,8 +28,21 @@ class MyPlugin {
                         }
                         return pre;
                     }, []);
-                    const translateRate = unResolve.length / matchArr.length;
-                    
+                    // 渲染结果
+                    let renderTemp = await ejs.renderFile(
+                        path.resolve(__dirname, './template.html'),
+                        {
+                            total: matchArr.length,
+                            unResolve: unResolve.length,
+                            unResolveLists: unResolve
+                        }
+                    )
+                    // 这里生成路径直接使用终端目录./checkRes.html
+                    fs.writeFile('./checkRes.html', renderTemp, e => {
+                        if(e) {
+                            throw new Error(e)
+                        }
+                    })
                     compilation.assets[filename] = {
                         source: function () {
                             return source
@@ -37,9 +55,9 @@ class MyPlugin {
             })
             cb()
         });
-        compiler.hooks.done.tap('myplugin', (compilation) => {
-            console.log('webpack 构建完毕！');
+        compiler.hooks.done.tap('translate-check-plugin', (compilation) => {
+            console.log('多语言检查完成，可在checkRes.html中查看未翻译的文案');
         });
     }
 }
-module.exports = MyPlugin;
+module.exports = TranslateCheckPlugin;
