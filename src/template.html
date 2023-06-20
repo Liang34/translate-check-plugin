@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body style="height: 100%; width: 100%; margin: 0">
+    <div style="display: flex; align-items: center; justify-content: center;flex-direction: column;height: 100%;">
+        共有<%=total%>条文案，
+            还有<%=unResolve%>条文案未翻译
+            未翻译文案：
+            <div>
+                <ul style="clear: both;">
+                    <% unResolveLists.forEach(function(b){%>
+                        <li style="float: left; margin:0 10px;">
+                            <%- b %>
+                        </li>
+                        <% })%>
+                </ul>
+            </div>
+    </div>
+</body>
+
+</html>
